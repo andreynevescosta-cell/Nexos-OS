@@ -34,7 +34,16 @@ jobs:
           test -f NEXOS_OS_Android/settings.gradle.kts
           test -f NEXOS_OS_Android/app/build.gradle.kts
           echo "Arquivos do projeto:"
-          find NEXOS_OS_Android -maxdepth 5 -type f | sort
+          find NEXOS_OS_Android -maxdepth 8 -type f | sort
+          echo "::group::MainActivity.kt source for safe patching"
+          sed -n '1,260p' NEXOS_OS_Android/app/src/main/java/com/nexos/os/MainActivity.kt
+          echo "::endgroup::"
+          echo "::group::AndroidManifest.xml"
+          find NEXOS_OS_Android/app/src/main -name AndroidManifest.xml -exec sh -c 'echo "### $1"; cat "$1"' _ {} \;
+          echo "::endgroup::"
+          echo "::group::Gradle app configuration"
+          sed -n '1,220p' NEXOS_OS_Android/app/build.gradle.kts
+          echo "::endgroup::"
 
       - name: Corrigir import do verticalScroll
         run: |

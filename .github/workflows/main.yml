@@ -6,6 +6,7 @@ on:
     paths:
       - ".github/workflows/main.yml"
       - "NEXOS_OS_Android_projeto.zip"
+      - "android-overlay/**"
 
 permissions:
   contents: read
@@ -33,35 +34,13 @@ jobs:
           unzip -o NEXOS_OS_Android_projeto.zip -d .
           test -f NEXOS_OS_Android/settings.gradle.kts
           test -f NEXOS_OS_Android/app/build.gradle.kts
-          echo "Arquivos do projeto:"
-          find NEXOS_OS_Android -maxdepth 8 -type f | sort
-          echo "::group::MainActivity.kt source for safe patching"
-          sed -n '1,260p' NEXOS_OS_Android/app/src/main/java/com/nexos/os/MainActivity.kt
-          echo "::endgroup::"
-          echo "::group::AndroidManifest.xml"
-          find NEXOS_OS_Android/app/src/main -name AndroidManifest.xml -exec sh -c 'echo "### $1"; cat "$1"' _ {} \;
-          echo "::endgroup::"
-          echo "::group::Gradle app configuration"
-          sed -n '1,220p' NEXOS_OS_Android/app/build.gradle.kts
-          echo "::endgroup::"
 
-      - name: Corrigir import do verticalScroll
+      - name: Aplicar interface NEXOS e integração inicial com PPSSPP
         run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          p = Path("NEXOS_OS_Android/app/src/main/java/com/nexos/os/MainActivity.kt")
-          source = p.read_text()
-          required = "import androidx.compose.foundation.verticalScroll"
-          if required not in source:
-              lines = source.splitlines(keepends=True)
-              if not lines or not lines[0].startswith("package "):
-                  raise SystemExit("Não foi possível localizar a declaração package em MainActivity.kt")
-              lines.insert(1, required + chr(10))
-              p.write_text("".join(lines))
-              print("Import verticalScroll adicionado.")
-          else:
-              print("Import verticalScroll já existe.")
-          PY
+          install -D android-overlay/MainActivity.kt NEXOS_OS_Android/app/src/main/java/com/nexos/os/MainActivity.kt
+          install -D android-overlay/AndroidManifest.xml NEXOS_OS_Android/app/src/main/AndroidManifest.xml
+          echo "Overlay NEXOS aplicado."
+          grep -n "applyImmersiveMode\|PLAYSTATION PORTABLE\|org.ppsspp.ppsspp" NEXOS_OS_Android/app/src/main/java/com/nexos/os/MainActivity.kt NEXOS_OS_Android/app/src/main/AndroidManifest.xml
 
       - name: Publicar fontes para revisão técnica
         uses: actions/upload-artifact@v4

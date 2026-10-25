@@ -102,6 +102,7 @@ class MainActivity : ComponentActivity() {
 private fun NexosApp() {
     val context = LocalContext.current
     var selectedId by remember { mutableStateOf("PS2") }
+    var awaitingSecondTap by remember { mutableStateOf(false) }
     var screen by remember { mutableStateOf("home") }
     var selectedSystem by remember { mutableStateOf("PS2") }
     var imported by remember { mutableStateOf(listOf<ImportedGame>()) }
@@ -161,6 +162,7 @@ private fun NexosApp() {
     }
 
     fun openPlatform(platform: Platform) {
+        awaitingSecondTap = false
         when (platform.kind) {
             "store" -> screen = "store"
             "import" -> {
@@ -175,7 +177,7 @@ private fun NexosApp() {
         }
     }
 
-    BackHandler(enabled = screen != "home") { screen = "home" }
+    BackHandler(enabled = screen != "home") { screen = "home"; awaitingSecondTap = false }
 
     MaterialTheme(colorScheme = darkColorScheme(
         background = Night, surface = Panel, primary = Purple,
@@ -218,9 +220,11 @@ private fun NexosApp() {
                                     .border(if (selected) 2.dp else 1.dp, if (selected) Neon else Color.White.copy(alpha = .18f), RoundedCornerShape(15.dp))
                                     .background(Brush.linearGradient(platform.colors))
                                     .clickable {
-                                        if (selectedId == platform.id) openPlatform(platform)
-                                        else {
+                                        if (selectedId == platform.id && awaitingSecondTap) {
+                                            openPlatform(platform)
+                                        } else {
                                             selectedId = platform.id
+                                            awaitingSecondTap = true
                                             if (soundEnabled) { /* reserved for subtle navigation sound */ }
                                         }
                                     }

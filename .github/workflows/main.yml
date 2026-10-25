@@ -15,16 +15,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Baixar repositório
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Preparar Java
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: "17"
 
       - name: Preparar Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v6
         with:
           gradle-version: "8.9"
 
@@ -35,6 +35,24 @@ jobs:
           test -f NEXOS_OS_Android/app/build.gradle.kts
           echo "Arquivos do projeto:"
           find NEXOS_OS_Android -maxdepth 5 -type f | sort
+
+      - name: Corrigir import do verticalScroll
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("NEXOS_OS_Android/app/src/main/java/com/nexos/os/MainActivity.kt")
+          source = p.read_text()
+          required = "import androidx.compose.foundation.verticalScroll"
+          if required not in source:
+              package_end = source.find("\\n")
+              if package_end < 0:
+                  raise SystemExit("Não foi possível localizar a declaração package em MainActivity.kt")
+              source = source[:package_end + 1] + "\\n" + required + "\\n" + source[package_end + 1:]
+              p.write_text(source)
+              print("Import verticalScroll adicionado.")
+          else:
+              print("Import verticalScroll já existe.")
+          PY
 
       - name: Compilar APK debug
         working-directory: NEXOS_OS_Android

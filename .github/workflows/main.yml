@@ -47,8 +47,7 @@ jobs:
               lines = source.splitlines(keepends=True)
               if not lines or not lines[0].startswith("package "):
                   raise SystemExit("Não foi possível localizar a declaração package em MainActivity.kt")
-              lines.insert(1, "\\n")
-              lines.insert(2, required + "\\n")
+              lines.insert(1, required + chr(10))
               p.write_text("".join(lines))
               print("Import verticalScroll adicionado.")
           else:

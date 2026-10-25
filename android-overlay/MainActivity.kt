@@ -5,6 +5,8 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.view.View
+import android.media.AudioManager
+import android.media.ToneGenerator
 import android.database.Cursor
 import android.provider.OpenableColumns
 import androidx.activity.ComponentActivity
@@ -33,6 +35,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -110,6 +114,11 @@ private fun NexosApp() {
     var showSettings by remember { mutableStateOf(false) }
     var showPpssppHelp by remember { mutableStateOf(false) }
     var soundEnabled by remember { mutableStateOf(true) }
+    val toneGenerator = remember { ToneGenerator(AudioManager.STREAM_MUSIC, 65) }
+    DisposableEffect(Unit) { onDispose { toneGenerator.release() } }
+    fun uiSound(confirm: Boolean = false) {
+        if (soundEnabled) toneGenerator.startTone(if (confirm) ToneGenerator.TONE_PROP_ACK else ToneGenerator.TONE_PROP_BEEP, 75)
+    }
 
     val picker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenMultipleDocuments()
@@ -183,9 +192,10 @@ private fun NexosApp() {
         background = Night, surface = Panel, primary = Purple,
         onPrimary = White, onBackground = White, onSurface = White
     )) {
+        val backdropColor = platforms.firstOrNull { it.id == selectedId }?.colors?.firstOrNull() ?: Purple
         Box(
             Modifier.fillMaxSize().background(
-                Brush.radialGradient(listOf(Color(0xFF38204D), Color(0xFF151020), Night))
+                Brush.radialGradient(listOf(backdropColor.copy(alpha = .42f), Color(0xFF151020), Night))
             )
         ) {
             if (screen == "home") {
@@ -209,8 +219,29 @@ private fun NexosApp() {
                             fontSize = 104.sp, fontWeight = FontWeight.Black, letterSpacing = (-7).sp,
                             maxLines = 1
                         )
+                        var dragDistance = 0f
                         Row(
-                            Modifier.fillMaxSize(),
+                            Modifier.fillMaxSize().pointerInput(selectedId) {
+                                detectHorizontalDragGestures(
+                                    onDragEnd = { dragDistance = 0f },
+                                    onHorizontalDrag = { _, amount ->
+                                        dragDistance += amount
+                                        if (dragDistance > 65f) {
+                                            val idx = platforms.indexOfFirst { it.id == selectedId }
+                                            selectedId = platforms[(idx - 1 + platforms.size) % platforms.size].id
+                                            awaitingSecondTap = false
+                                            uiSound()
+                                            dragDistance = 0f
+                                        } else if (dragDistance < -65f) {
+                                            val idx = platforms.indexOfFirst { it.id == selectedId }
+                                            selectedId = platforms[(idx + 1) % platforms.size].id
+                                            awaitingSecondTap = false
+                                            uiSound()
+                                            dragDistance = 0f
+                                        }
+                                    }
+                                )
+                            },
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
@@ -225,13 +256,13 @@ private fun NexosApp() {
                                 Text("SELECIONE  •  CONFIRME", color = Neon, fontSize = 8.sp, letterSpacing = 3.sp)
                                 Spacer(Modifier.height(9.dp))
                                 Box(
-                                    Modifier.width(190.dp).height(214.dp)
+                                    Modifier.width(250.dp).height(290.dp)
                                         .clip(RoundedCornerShape(14.dp))
                                         .border(1.dp, Neon.copy(alpha=.8f), RoundedCornerShape(14.dp))
                                         .background(Brush.linearGradient(listOf(current.colors.first(), Color(0xFF181020), current.colors.last())))
                                         .clickable {
-                                            if (awaitingSecondTap) openPlatform(current)
-                                            else awaitingSecondTap = true
+                                            if (awaitingSecondTap) { uiSound(true); openPlatform(current) }
+                                            else { awaitingSecondTap = true; uiSound() }
                                         }
                                         .padding(12.dp)
                                 ) {
@@ -269,13 +300,13 @@ private fun NexosApp() {
                         platforms.forEach { platform ->
                             val selected = selectedId == platform.id
                             Column(
-                                Modifier.width(82.dp).height(88.dp)
+                                Modifier.width(110.dp).height(100.dp)
                                     .clip(RoundedCornerShape(8.dp))
                                     .border(if (selected) 2.dp else 1.dp, if (selected) Neon else Color.White.copy(alpha=.12f), RoundedCornerShape(8.dp))
                                     .background(Brush.linearGradient(platform.colors))
                                     .clickable {
-                                        if (selectedId == platform.id && awaitingSecondTap) openPlatform(platform)
-                                        else { selectedId = platform.id; awaitingSecondTap = true }
+                                        if (selectedId == platform.id && awaitingSecondTap) { uiSound(true); openPlatform(platform) }
+                                        else { selectedId = platform.id; awaitingSecondTap = true; uiSound() }
                                     }.padding(6.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 verticalArrangement = Arrangement.SpaceBetween

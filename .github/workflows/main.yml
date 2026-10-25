@@ -1,18 +1,50 @@
-
 name: Compilar NEXOS OS APK
 
 on:
   workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/main.yml"
+      - "NEXOS_OS_Android_projeto.zip"
+
+permissions:
+  contents: read
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Baixar projeto
+      - name: Baixar repositório
         uses: actions/checkout@v4
 
-      - name: Listar arquivos
+      - name: Preparar Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Preparar Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.9"
+
+      - name: Extrair projeto Android
         run: |
-          echo "Arquivos do repositorio:"
-          ls -la
-          find . -maxdepth 4 -type f | head -200
+          unzip -o NEXOS_OS_Android_projeto.zip -d .
+          test -f NEXOS_OS_Android/settings.gradle.kts
+          test -f NEXOS_OS_Android/app/build.gradle.kts
+          echo "Arquivos do projeto:"
+          find NEXOS_OS_Android -maxdepth 5 -type f | sort
+
+      - name: Compilar APK debug
+        working-directory: NEXOS_OS_Android
+        run: gradle --no-daemon --stacktrace assembleDebug
+
+      - name: Publicar APK
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: NEXOS-OS-debug-APK
+          path: NEXOS_OS_Android/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+          retention-days: 14

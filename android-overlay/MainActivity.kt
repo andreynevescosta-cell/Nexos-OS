@@ -214,8 +214,8 @@ private fun NexosApp() {
                         platforms.forEach { platform ->
                             val selected = selectedId == platform.id
                             Column(
-                                Modifier.width(if (selected) 154.dp else 140.dp)
-                                    .height(if (selected) 194.dp else 178.dp)
+                                Modifier.width(148.dp)
+                                    .height(186.dp)
                                     .clip(RoundedCornerShape(15.dp))
                                     .border(if (selected) 2.dp else 1.dp, if (selected) Neon else Color.White.copy(alpha = .18f), RoundedCornerShape(15.dp))
                                     .background(Brush.linearGradient(platform.colors))

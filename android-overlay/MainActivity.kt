@@ -189,68 +189,105 @@ private fun NexosApp() {
             )
         ) {
             if (screen == "home") {
-                Column(Modifier.fillMaxSize().padding(horizontal = 22.dp, vertical = 14.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Column {
-                            Text("NEXOS", color = White, fontSize = 25.sp, fontWeight = FontWeight.Black, letterSpacing = 5.sp)
-                            Text("SEU UNIVERSO DE JOGOS", color = Neon, fontSize = 8.sp, letterSpacing = 2.sp)
-                        }
+                val current = platforms.firstOrNull { it.id == selectedId } ?: platforms[1]
+                Column(Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 8.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.height(42.dp)) {
+                        Text("NEX", color = White, fontSize = 24.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp)
+                        Text("OS", color = Neon, fontSize = 24.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp)
+                        Spacer(Modifier.width(12.dp))
+                        Text("CYBER ARCADE  //  GAME LIBRARY", color = Muted, fontSize = 8.sp, letterSpacing = 2.sp)
                         Spacer(Modifier.weight(1f))
                         IconButton(onClick = { showSettings = true }) {
                             androidx.compose.material3.Icon(Icons.Default.Settings, contentDescription = "Configurações", tint = Neon)
                         }
                     }
-                    Spacer(Modifier.height(12.dp))
-                    Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(platforms.firstOrNull { it.id == selectedId }?.title ?: "NEXOS OS", color = White, fontSize = 21.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp)
-                        Text("Toque para selecionar • toque novamente para entrar", color = Muted, fontSize = 10.sp)
+                    Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
+                        Text(
+                            current.caption,
+                            modifier = Modifier.align(Alignment.Center),
+                            color = Color.White.copy(alpha = 0.035f),
+                            fontSize = 104.sp, fontWeight = FontWeight.Black, letterSpacing = (-7).sp,
+                            maxLines = 1
+                        )
+                        Row(
+                            Modifier.fillMaxSize(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text("‹", modifier = Modifier.clip(RoundedCornerShape(50)).background(Color.White.copy(alpha=.06f))
+                                .clickable {
+                                    val idx = platforms.indexOfFirst { it.id == selectedId }
+                                    selectedId = platforms[(idx - 1 + platforms.size) % platforms.size].id
+                                    awaitingSecondTap = true
+                                }.padding(horizontal = 15.dp, vertical = 3.dp),
+                                color = Neon, fontSize = 35.sp)
+                            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
+                                Text("SELECIONE  •  CONFIRME", color = Neon, fontSize = 8.sp, letterSpacing = 3.sp)
+                                Spacer(Modifier.height(9.dp))
+                                Box(
+                                    Modifier.width(190.dp).height(214.dp)
+                                        .clip(RoundedCornerShape(14.dp))
+                                        .border(1.dp, Neon.copy(alpha=.8f), RoundedCornerShape(14.dp))
+                                        .background(Brush.linearGradient(listOf(current.colors.first(), Color(0xFF181020), current.colors.last())))
+                                        .clickable {
+                                            if (awaitingSecondTap) openPlatform(current)
+                                            else awaitingSecondTap = true
+                                        }
+                                        .padding(12.dp)
+                                ) {
+                                    Box(Modifier.fillMaxSize().clip(RoundedCornerShape(10.dp))
+                                        .background(Brush.radialGradient(listOf(current.colors.first().copy(alpha=.8f), Color(0xFF100D17))))) {
+                                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                            Text(current.symbol, color = White, fontSize = 86.sp, fontWeight = FontWeight.Black)
+                                        }
+                                        Box(Modifier.fillMaxWidth().height(2.dp).align(Alignment.Center)
+                                            .background(Brush.horizontalGradient(listOf(Color.Transparent, Neon, Color(0xFF35E7FF), Color.Transparent))))
+                                        Column(Modifier.align(Alignment.BottomStart)) {
+                                            Text(current.caption, color = Neon, fontSize = 9.sp, letterSpacing = 3.sp)
+                                            Text(current.title, color = White, fontSize = 11.sp, fontWeight = FontWeight.Black, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                        }
+                                    }
+                                }
+                                Spacer(Modifier.height(8.dp))
+                                Text(current.title, color = White, fontSize = 16.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp)
+                                Text(if (awaitingSecondTap) "TOQUE NOVAMENTE PARA ENTRAR" else "TOQUE PARA SELECIONAR", color = Muted, fontSize = 8.sp, letterSpacing = 1.sp)
+                            }
+                            Text("›", modifier = Modifier.clip(RoundedCornerShape(50)).background(Color.White.copy(alpha=.06f))
+                                .clickable {
+                                    val idx = platforms.indexOfFirst { it.id == selectedId }
+                                    selectedId = platforms[(idx + 1) % platforms.size].id
+                                    awaitingSecondTap = true
+                                }.padding(horizontal = 15.dp, vertical = 3.dp),
+                                color = Neon, fontSize = 35.sp)
+                        }
                     }
-                    Spacer(Modifier.height(12.dp))
                     Row(
-                        modifier = Modifier.fillMaxWidth().weight(1f).horizontalScroll(rememberScrollState()),
-                        horizontalArrangement = Arrangement.spacedBy(13.dp),
+                        Modifier.fillMaxWidth().height(104.dp).horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         platforms.forEach { platform ->
                             val selected = selectedId == platform.id
                             Column(
-                                Modifier.width(148.dp)
-                                    .height(186.dp)
-                                    .clip(RoundedCornerShape(15.dp))
-                                    .border(if (selected) 2.dp else 1.dp, if (selected) Neon else Color.White.copy(alpha = .18f), RoundedCornerShape(15.dp))
+                                Modifier.width(82.dp).height(88.dp)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .border(if (selected) 2.dp else 1.dp, if (selected) Neon else Color.White.copy(alpha=.12f), RoundedCornerShape(8.dp))
                                     .background(Brush.linearGradient(platform.colors))
                                     .clickable {
-                                        if (selectedId == platform.id && awaitingSecondTap) {
-                                            openPlatform(platform)
-                                        } else {
-                                            selectedId = platform.id
-                                            awaitingSecondTap = true
-                                            if (soundEnabled) { /* reserved for subtle navigation sound */ }
-                                        }
-                                    }
-                                    .padding(10.dp),
+                                        if (selectedId == platform.id && awaitingSecondTap) openPlatform(platform)
+                                        else { selectedId = platform.id; awaitingSecondTap = true }
+                                    }.padding(6.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 verticalArrangement = Arrangement.SpaceBetween
                             ) {
-                                Text(if (selected) "◆" else " ", color = Neon, fontSize = 10.sp)
-                                Box(
-                                    Modifier.fillMaxWidth().weight(1f).clip(RoundedCornerShape(10.dp))
-                                        .background(Color.Black.copy(alpha = .16f)),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text(platform.symbol, color = White, fontSize = if (selected) 57.sp else 48.sp, fontWeight = FontWeight.Black)
-                                }
-                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Text(platform.title, color = White, fontSize = 9.sp, fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                                    Spacer(Modifier.height(3.dp))
-                                    Text(platform.caption, color = Neon, fontSize = 9.sp, letterSpacing = 1.sp)
-                                }
+                                Text(platform.symbol, color = White, fontSize = 25.sp, fontWeight = FontWeight.Black)
+                                Text(platform.caption, color = if (selected) Neon else Muted, fontSize = 8.sp, fontWeight = FontWeight.Bold, maxLines = 1)
                             }
                         }
                     }
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("◀  ▶  NAVEGAR", color = Muted, fontSize = 9.sp, letterSpacing = 1.sp)
-                        Text("NEXOS OS • v0.2", color = Neon.copy(alpha = .8f), fontSize = 9.sp)
+                    Row(Modifier.fillMaxWidth().height(18.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                        Text("◀  ▶  NAVEGAR", color = Muted, fontSize = 8.sp, letterSpacing = 1.sp)
+                        Text("NEXOS OS  //  v0.3", color = Neon.copy(alpha=.8f), fontSize = 8.sp, letterSpacing = 1.sp)
                     }
                 }
             } else {

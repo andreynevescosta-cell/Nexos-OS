@@ -35,6 +35,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.ui.platform.LocalContext
@@ -199,7 +200,6 @@ private fun NexosApp() {
             )
         ) {
             if (screen == "home") {
-                val current = platforms.firstOrNull { it.id == selectedId } ?: platforms[1]
                 Column(Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 8.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.height(42.dp)) {
                         Text("NEX", color = White, fontSize = 24.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp)
@@ -212,113 +212,85 @@ private fun NexosApp() {
                         }
                     }
                     Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
-                        Text(
-                            current.caption,
-                            modifier = Modifier.align(Alignment.Center),
-                            color = Color.White.copy(alpha = 0.035f),
-                            fontSize = 104.sp, fontWeight = FontWeight.Black, letterSpacing = (-7).sp,
-                            maxLines = 1
-                        )
-                        var dragDistance = 0f
+                        val current = platforms.firstOrNull { it.id == selectedId } ?: platforms[1]
+                        Text(current.caption, color = current.colors.first().copy(alpha = .10f),
+                            fontSize = 100.sp, fontWeight = FontWeight.Black, letterSpacing = (-7).sp, maxLines = 1)
                         Row(
-                            Modifier.fillMaxSize().pointerInput(selectedId) {
-                                detectHorizontalDragGestures(
-                                    onDragEnd = { dragDistance = 0f },
-                                    onHorizontalDrag = { _, amount ->
-                                        dragDistance += amount
-                                        if (dragDistance > 65f) {
-                                            val idx = platforms.indexOfFirst { it.id == selectedId }
-                                            selectedId = platforms[(idx - 1 + platforms.size) % platforms.size].id
-                                            awaitingSecondTap = false
-                                            uiSound()
-                                            dragDistance = 0f
-                                        } else if (dragDistance < -65f) {
-                                            val idx = platforms.indexOfFirst { it.id == selectedId }
-                                            selectedId = platforms[(idx + 1) % platforms.size].id
-                                            awaitingSecondTap = false
-                                            uiSound()
-                                            dragDistance = 0f
-                                        }
-                                    }
-                                )
-                            },
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
+                            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(18.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text("‹", modifier = Modifier.clip(RoundedCornerShape(50)).background(Color.White.copy(alpha=.06f))
-                                .clickable {
-                                    val idx = platforms.indexOfFirst { it.id == selectedId }
-                                    selectedId = platforms[(idx - 1 + platforms.size) % platforms.size].id
-                                    awaitingSecondTap = true
-                                }.padding(horizontal = 15.dp, vertical = 3.dp),
-                                color = Neon, fontSize = 35.sp)
-                            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
-                                Text("SELECIONE  •  CONFIRME", color = Neon, fontSize = 8.sp, letterSpacing = 3.sp)
-                                Spacer(Modifier.height(9.dp))
-                                Box(
-                                    Modifier.width(250.dp).height(290.dp)
+                            platforms.forEachIndexed { index, platform ->
+                                val selected = selectedId == platform.id
+                                val distance = index - platforms.indexOfFirst { it.id == selectedId }
+                                Column(
+                                    Modifier.width(190.dp).height(285.dp)
+                                        .graphicsLayer {
+                                            rotationY = when {
+                                                selected -> 0f
+                                                distance < 0 -> 24f
+                                                else -> -24f
+                                            }
+                                            cameraDistance = 18f * density
+                                            val scale = if (selected) 1f else .82f
+                                            scaleX = scale
+                                            scaleY = scale
+                                            alpha = if (selected) 1f else .78f
+                                        }
                                         .clip(RoundedCornerShape(14.dp))
-                                        .border(1.dp, Neon.copy(alpha=.8f), RoundedCornerShape(14.dp))
-                                        .background(Brush.linearGradient(listOf(current.colors.first(), Color(0xFF181020), current.colors.last())))
+                                        .border(if (selected) 2.dp else 1.dp,
+                                            if (selected) Neon else Color.White.copy(alpha = .22f),
+                                            RoundedCornerShape(14.dp))
+                                        .background(Brush.linearGradient(listOf(
+                                            platform.colors.first(), Color(0xFF191321), platform.colors.last()
+                                        )))
                                         .clickable {
-                                            if (awaitingSecondTap) { uiSound(true); openPlatform(current) }
-                                            else { awaitingSecondTap = true; uiSound() }
+                                            if (selectedId == platform.id && awaitingSecondTap) {
+                                                uiSound(true)
+                                                openPlatform(platform)
+                                            } else {
+                                                selectedId = platform.id
+                                                awaitingSecondTap = true
+                                                uiSound()
+                                            }
                                         }
-                                        .padding(12.dp)
+                                        .padding(12.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.SpaceBetween
                                 ) {
-                                    Box(Modifier.fillMaxSize().clip(RoundedCornerShape(10.dp))
-                                        .background(Brush.radialGradient(listOf(current.colors.first().copy(alpha=.8f), Color(0xFF100D17))))) {
-                                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                            Text(current.symbol, color = White, fontSize = 86.sp, fontWeight = FontWeight.Black)
-                                        }
+                                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                        Text("NEXOS", color = Neon, fontSize = 9.sp, letterSpacing = 2.sp, fontWeight = FontWeight.Bold)
+                                        Text("0${index + 1}", color = Muted, fontSize = 9.sp)
+                                    }
+                                    Box(
+                                        Modifier.fillMaxWidth().weight(1f)
+                                            .clip(RoundedCornerShape(9.dp))
+                                            .background(Brush.radialGradient(listOf(
+                                                platform.colors.first().copy(alpha = .9f), Color(0xFF100D17)
+                                            ))),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(platform.symbol, color = White, fontSize = 76.sp, fontWeight = FontWeight.Black)
                                         Box(Modifier.fillMaxWidth().height(2.dp).align(Alignment.Center)
                                             .background(Brush.horizontalGradient(listOf(Color.Transparent, Neon, Color(0xFF35E7FF), Color.Transparent))))
-                                        Column(Modifier.align(Alignment.BottomStart)) {
-                                            Text(current.caption, color = Neon, fontSize = 9.sp, letterSpacing = 3.sp)
-                                            Text(current.title, color = White, fontSize = 11.sp, fontWeight = FontWeight.Black, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                        }
+                                        Text(platform.caption, modifier = Modifier.align(Alignment.BottomStart).padding(8.dp),
+                                            color = Neon, fontSize = 10.sp, letterSpacing = 3.sp, fontWeight = FontWeight.Bold)
+                                    }
+                                    Column(Modifier.fillMaxWidth()) {
+                                        Text(platform.title, color = White, fontSize = 12.sp, fontWeight = FontWeight.Black,
+                                            maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                        Spacer(Modifier.height(5.dp))
+                                        Box(Modifier.fillMaxWidth().height(3.dp).clip(RoundedCornerShape(2.dp))
+                                            .background(if (selected) Neon else Color.White.copy(alpha = .18f)))
                                     }
                                 }
-                                Spacer(Modifier.height(8.dp))
-                                Text(current.title, color = White, fontSize = 16.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp)
-                                Text(if (awaitingSecondTap) "TOQUE NOVAMENTE PARA ENTRAR" else "TOQUE PARA SELECIONAR", color = Muted, fontSize = 8.sp, letterSpacing = 1.sp)
-                            }
-                            Text("›", modifier = Modifier.clip(RoundedCornerShape(50)).background(Color.White.copy(alpha=.06f))
-                                .clickable {
-                                    val idx = platforms.indexOfFirst { it.id == selectedId }
-                                    selectedId = platforms[(idx + 1) % platforms.size].id
-                                    awaitingSecondTap = true
-                                }.padding(horizontal = 15.dp, vertical = 3.dp),
-                                color = Neon, fontSize = 35.sp)
-                        }
-                    }
-                    Row(
-                        Modifier.fillMaxWidth().height(104.dp).horizontalScroll(rememberScrollState()),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        platforms.forEach { platform ->
-                            val selected = selectedId == platform.id
-                            Column(
-                                Modifier.width(110.dp).height(100.dp)
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .border(if (selected) 2.dp else 1.dp, if (selected) Neon else Color.White.copy(alpha=.12f), RoundedCornerShape(8.dp))
-                                    .background(Brush.linearGradient(platform.colors))
-                                    .clickable {
-                                        if (selectedId == platform.id && awaitingSecondTap) { uiSound(true); openPlatform(platform) }
-                                        else { selectedId = platform.id; awaitingSecondTap = true; uiSound() }
-                                    }.padding(6.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Text(platform.symbol, color = White, fontSize = 25.sp, fontWeight = FontWeight.Black)
-                                Text(platform.caption, color = if (selected) Neon else Muted, fontSize = 8.sp, fontWeight = FontWeight.Bold, maxLines = 1)
                             }
                         }
                     }
-                    Row(Modifier.fillMaxWidth().height(18.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                        Text("◀  ▶  NAVEGAR", color = Muted, fontSize = 8.sp, letterSpacing = 1.sp)
-                        Text("NEXOS OS  //  v0.3", color = Neon.copy(alpha=.8f), fontSize = 8.sp, letterSpacing = 1.sp)
+                    Row(Modifier.fillMaxWidth().height(26.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                        Text("DESLIZE PARA OS LADOS  •  UM TOQUE SELECIONA  •  DOIS TOQUES ENTRAM",
+                            color = Muted, fontSize = 8.sp, letterSpacing = .5.sp)
+                        Text("NEXOS OS  //  v0.4", color = Neon.copy(alpha = .8f), fontSize = 8.sp, letterSpacing = 1.sp)
                     }
                 }
             } else {

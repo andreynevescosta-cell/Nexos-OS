@@ -1,0 +1,43 @@
+name: Compilar NEXOS OS para Windows 11
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["main"]
+    paths:
+      - "index.html"
+      - "main.js"
+      - "package.json"
+      - ".github/workflows/windows.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Baixar repositório
+        uses: actions/checkout@v4
+
+      - name: Preparar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Instalar dependências
+        run: npm install
+
+      - name: Compilar instalador e versão portátil
+        run: npm run dist:win
+
+      - name: Publicar executáveis
+        uses: actions/upload-artifact@v4
+        with:
+          name: NEXOS-OS-Windows-11
+          path: |
+            dist/*.exe
+            dist/*.blockmap
+            dist/latest.yml
+          if-no-files-found: error
+          retention-days: 14

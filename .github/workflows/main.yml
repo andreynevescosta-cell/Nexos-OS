@@ -1,0 +1,18 @@
+
+name: Compilar NEXOS OS APK
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar projeto
+        uses: actions/checkout@v4
+
+      - name: Listar arquivos
+        run: |
+          echo "Arquivos do repositorio:"
+          ls -la
+          find . -maxdepth 4 -type f | head -200

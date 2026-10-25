@@ -1,0 +1,50 @@
+{
+  "name": "nexos-os",
+  "version": "0.1.0",
+  "description": "NEXOS OS - interface gamer para Windows",
+  "main": "main.js",
+  "author": "NEXOS OS",
+  "license": "UNLICENSED",
+  "scripts": {
+    "start": "electron .",
+    "dist:win": "electron-builder --win"
+  },
+  "devDependencies": {
+    "electron": "^36.3.2",
+    "electron-builder": "^26.0.12"
+  },
+  "build": {
+    "appId": "br.com.nexos.os",
+    "productName": "NEXOS OS",
+    "asar": true,
+    "files": [
+      "main.js",
+      "index.html",
+      "package.json"
+    ],
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        },
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    },
+    "portable": {
+      "artifactName": "NEXOS-OS-Windows-Portable-${version}.exe"
+    }
+  }
+}

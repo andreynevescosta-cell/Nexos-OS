@@ -63,6 +63,19 @@ jobs:
               print("Import verticalScroll já existe.")
           PY
 
+      - name: Publicar fontes para revisão técnica
+        uses: actions/upload-artifact@v4
+        with:
+          name: NEXOS-OS-source-review
+          path: |
+            NEXOS_OS_Android/app/src/main/java/com/nexos/os/MainActivity.kt
+            NEXOS_OS_Android/app/src/main/AndroidManifest.xml
+            NEXOS_OS_Android/app/build.gradle.kts
+            NEXOS_OS_Android/settings.gradle.kts
+            NEXOS_OS_Android/build.gradle.kts
+          if-no-files-found: warn
+          retention-days: 7
+
       - name: Compilar APK debug
         working-directory: NEXOS_OS_Android
         run: gradle --no-daemon --stacktrace assembleDebug

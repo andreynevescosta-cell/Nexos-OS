@@ -212,40 +212,63 @@ private fun NexosApp() {
                         }
                     }
                     Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
-                        val current = platforms.firstOrNull { it.id == selectedId } ?: platforms[1]
+                        val selectedIndex = platforms.indexOfFirst { it.id == selectedId }.coerceAtLeast(0)
+                        val current = platforms[selectedIndex]
                         Text(current.caption, color = current.colors.first().copy(alpha = .10f),
                             fontSize = 100.sp, fontWeight = FontWeight.Black, letterSpacing = (-7).sp, maxLines = 1)
+                        var dragDistance = 0f
                         Row(
-                            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-                            horizontalArrangement = Arrangement.spacedBy(18.dp),
+                            Modifier.fillMaxWidth().pointerInput(selectedId) {
+                                detectHorizontalDragGestures(
+                                    onDragEnd = { dragDistance = 0f },
+                                    onHorizontalDrag = { _, amount ->
+                                        dragDistance += amount
+                                        if (dragDistance < -45f) {
+                                            selectedId = platforms[(platforms.indexOfFirst { it.id == selectedId } + 1) % platforms.size].id
+                                            awaitingSecondTap = false
+                                            uiSound()
+                                            dragDistance = 0f
+                                        } else if (dragDistance > 45f) {
+                                            val idx = platforms.indexOfFirst { it.id == selectedId }
+                                            selectedId = platforms[(idx - 1 + platforms.size) % platforms.size].id
+                                            awaitingSecondTap = false
+                                            uiSound()
+                                            dragDistance = 0f
+                                        }
+                                    }
+                                )
+                            },
+                            horizontalArrangement = Arrangement.Center,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            platforms.forEachIndexed { index, platform ->
-                                val selected = selectedId == platform.id
-                                val distance = index - platforms.indexOfFirst { it.id == selectedId }
+                            listOf(
+                                (selectedIndex - 1 + platforms.size) % platforms.size,
+                                selectedIndex,
+                                (selectedIndex + 1) % platforms.size
+                            ).forEach { index ->
+                                val platform = platforms[index]
+                                val selected = platform.id == selectedId
                                 Column(
-                                    Modifier.width(190.dp).height(285.dp)
+                                    Modifier.padding(horizontal = 9.dp)
+                                        .width(if (selected) 245.dp else 185.dp)
+                                        .height(if (selected) 315.dp else 255.dp)
                                         .graphicsLayer {
-                                            rotationY = when {
-                                                selected -> 0f
-                                                distance < 0 -> 24f
-                                                else -> -24f
-                                            }
+                                            rotationY = if (selected) 0f else if (index < selectedIndex || (selectedIndex == 0 && index == platforms.lastIndex)) 28f else -28f
                                             cameraDistance = 18f * density
-                                            val scale = if (selected) 1f else .82f
+                                            val scale = if (selected) 1f else .88f
                                             scaleX = scale
                                             scaleY = scale
                                             alpha = if (selected) 1f else .78f
                                         }
-                                        .clip(RoundedCornerShape(14.dp))
+                                        .clip(RoundedCornerShape(12.dp))
                                         .border(if (selected) 2.dp else 1.dp,
                                             if (selected) Neon else Color.White.copy(alpha = .22f),
-                                            RoundedCornerShape(14.dp))
+                                            RoundedCornerShape(12.dp))
                                         .background(Brush.linearGradient(listOf(
                                             platform.colors.first(), Color(0xFF191321), platform.colors.last()
                                         )))
                                         .clickable {
-                                            if (selectedId == platform.id && awaitingSecondTap) {
+                                            if (selected && awaitingSecondTap) {
                                                 uiSound(true)
                                                 openPlatform(platform)
                                             } else {
@@ -264,13 +287,13 @@ private fun NexosApp() {
                                     }
                                     Box(
                                         Modifier.fillMaxWidth().weight(1f)
-                                            .clip(RoundedCornerShape(9.dp))
+                                            .clip(RoundedCornerShape(8.dp))
                                             .background(Brush.radialGradient(listOf(
                                                 platform.colors.first().copy(alpha = .9f), Color(0xFF100D17)
                                             ))),
                                         contentAlignment = Alignment.Center
                                     ) {
-                                        Text(platform.symbol, color = White, fontSize = 76.sp, fontWeight = FontWeight.Black)
+                                        Text(platform.symbol, color = White, fontSize = if (selected) 92.sp else 68.sp, fontWeight = FontWeight.Black)
                                         Box(Modifier.fillMaxWidth().height(2.dp).align(Alignment.Center)
                                             .background(Brush.horizontalGradient(listOf(Color.Transparent, Neon, Color(0xFF35E7FF), Color.Transparent))))
                                         Text(platform.caption, modifier = Modifier.align(Alignment.BottomStart).padding(8.dp),

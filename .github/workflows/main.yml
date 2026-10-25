@@ -39,7 +39,7 @@ jobs:
         run: |
           install -D android-overlay/MainActivity.kt NEXOS_OS_Android/app/src/main/java/com/nexos/os/MainActivity.kt
           install -D android-overlay/AndroidManifest.xml NEXOS_OS_Android/app/src/main/AndroidManifest.xml
-          echo "Overlay NEXOS aplicado."
+          echo "Overlay NEXOS aplicado: fullscreen, capas e seleção em dois toques."
           grep -n "applyImmersiveMode\|PLAYSTATION PORTABLE\|org.ppsspp.ppsspp" NEXOS_OS_Android/app/src/main/java/com/nexos/os/MainActivity.kt NEXOS_OS_Android/app/src/main/AndroidManifest.xml
 
       - name: Publicar fontes para revisão técnica

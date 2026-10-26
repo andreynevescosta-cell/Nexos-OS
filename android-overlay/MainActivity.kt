@@ -22,6 +22,11 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -43,6 +48,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.delay
 
 private val Night = Color(0xFF08070D)
 private val Panel = Color(0xFF17121F)
@@ -73,7 +79,8 @@ private val platforms = listOf(
     Platform("PSP", "PLAYSTATION PORTABLE", "▰", "PSP", listOf(Color(0xFF3D5A9B), Color(0xFF101321))),
     Platform("PC", "PC GAMING", "⌘", "PC", listOf(Color(0xFF5C4C76), Color(0xFF17121F))),
     Platform("IMPORT", "ADICIONAR ROMS", "＋", "IMPORTAR", listOf(Color(0xFF30283E), Color(0xFF111018)), "import"),
-    Platform("STORE", "LOJA NEXOS", "⌑", "LOJA", listOf(Color(0xFF713E92), Color(0xFF171020)), "store")
+    Platform("STORE", "LOJA NEXOS", "⌑", "LOJA", listOf(Color(0xFF713E92), Color(0xFF171020)), "store"),
+    Platform("LIBRARY", "MINHA BIBLIOTECA", "▣", "BIBLIOTECA", listOf(Color(0xFF347FA4), Color(0xFF111A2A)), "library")
 )
 
 class MainActivity : ComponentActivity() {
@@ -109,6 +116,8 @@ private fun NexosApp() {
     var selectedId by remember { mutableStateOf("PS2") }
     var awaitingSecondTap by remember { mutableStateOf(false) }
     var screen by remember { mutableStateOf("home") }
+    var splashDone by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { delay(1900); splashDone = true }
     var selectedSystem by remember { mutableStateOf("PS2") }
     var imported by remember { mutableStateOf(listOf<ImportedGame>()) }
     var search by remember { mutableStateOf("") }
@@ -175,6 +184,7 @@ private fun NexosApp() {
         awaitingSecondTap = false
         when (platform.kind) {
             "store" -> screen = "store"
+            "library" -> { selectedSystem = "PS2"; search = ""; screen = "library" }
             "import" -> {
                 selectedSystem = selectedId.takeIf { it !in listOf("IMPORT", "STORE") } ?: "PSP"
                 screen = "import"
@@ -199,121 +209,115 @@ private fun NexosApp() {
                 Brush.radialGradient(listOf(backdropColor.copy(alpha = .42f), Color(0xFF151020), Night))
             )
         ) {
-            if (screen == "home") {
-                Column(Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 8.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.height(42.dp)) {
-                        Text("NEX", color = White, fontSize = 24.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp)
-                        Text("OS", color = Neon, fontSize = 24.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp)
-                        Spacer(Modifier.width(12.dp))
-                        Text("CYBER ARCADE  //  GAME LIBRARY", color = Muted, fontSize = 8.sp, letterSpacing = 2.sp)
-                        Spacer(Modifier.weight(1f))
-                        IconButton(onClick = { showSettings = true }) {
-                            androidx.compose.material3.Icon(Icons.Default.Settings, contentDescription = "Configurações", tint = Neon)
-                        }
+            if (!splashDone) {
+                NexusSplash()
+            } else if (screen == "home") {
+                BoxWithConstraints(Modifier.fillMaxSize()) {
+                    val cardWidth = (maxWidth * 0.205f).coerceIn(112.dp, 205.dp)
+                    val cardHeight = cardWidth * 1.42f
+                    val railState = rememberLazyListState()
+                    val selectedIndex = platforms.indexOfFirst { it.id == selectedId }.coerceAtLeast(0)
+                    LaunchedEffect(selectedId) {
+                        railState.animateScrollToItem(selectedIndex)
                     }
-                    Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
-                        val selectedIndex = platforms.indexOfFirst { it.id == selectedId }.coerceAtLeast(0)
-                        val current = platforms[selectedIndex]
-                        Text(current.caption, color = current.colors.first().copy(alpha = .10f),
-                            fontSize = 100.sp, fontWeight = FontWeight.Black, letterSpacing = (-7).sp, maxLines = 1)
-                        var dragDistance = 0f
+                    Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
+                        Spacer(Modifier.height(16.dp))
                         Row(
-                            Modifier.fillMaxWidth().pointerInput(selectedId) {
-                                detectHorizontalDragGestures(
-                                    onDragEnd = { dragDistance = 0f },
-                                    onHorizontalDrag = { _, amount ->
-                                        dragDistance += amount
-                                        if (dragDistance < -45f) {
-                                            selectedId = platforms[(platforms.indexOfFirst { it.id == selectedId } + 1) % platforms.size].id
-                                            awaitingSecondTap = false
-                                            uiSound()
-                                            dragDistance = 0f
-                                        } else if (dragDistance > 45f) {
-                                            val idx = platforms.indexOfFirst { it.id == selectedId }
-                                            selectedId = platforms[(idx - 1 + platforms.size) % platforms.size].id
-                                            awaitingSecondTap = false
-                                            uiSound()
-                                            dragDistance = 0f
-                                        }
-                                    }
-                                )
-                            },
-                            horizontalArrangement = Arrangement.Center,
+                            Modifier.fillMaxWidth().padding(horizontal = 24.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            listOf(
-                                (selectedIndex - 1 + platforms.size) % platforms.size,
-                                selectedIndex,
-                                (selectedIndex + 1) % platforms.size
-                            ).forEach { index ->
-                                val platform = platforms[index]
-                                val selected = platform.id == selectedId
-                                Column(
-                                    Modifier.padding(horizontal = 9.dp)
-                                        .width(if (selected) 245.dp else 185.dp)
-                                        .height(if (selected) 315.dp else 255.dp)
-                                        .graphicsLayer {
-                                            rotationY = if (selected) 0f else if (index < selectedIndex || (selectedIndex == 0 && index == platforms.lastIndex)) 28f else -28f
-                                            cameraDistance = 18f * density
-                                            val scale = if (selected) 1f else .88f
-                                            scaleX = scale
-                                            scaleY = scale
-                                            alpha = if (selected) 1f else .78f
-                                        }
-                                        .clip(RoundedCornerShape(12.dp))
-                                        .border(if (selected) 2.dp else 1.dp,
-                                            if (selected) Neon else Color.White.copy(alpha = .22f),
-                                            RoundedCornerShape(12.dp))
-                                        .background(Brush.linearGradient(listOf(
-                                            platform.colors.first(), Color(0xFF191321), platform.colors.last()
-                                        )))
-                                        .clickable {
-                                            if (selected && awaitingSecondTap) {
-                                                uiSound(true)
-                                                openPlatform(platform)
-                                            } else {
-                                                selectedId = platform.id
-                                                awaitingSecondTap = true
-                                                uiSound()
+                            Text("NEXUS", color = White, fontSize = 16.sp, fontWeight = FontWeight.Black, letterSpacing = 4.sp)
+                            Spacer(Modifier.weight(1f))
+                            IconButton(onClick = { showSettings = true }) {
+                                androidx.compose.material3.Icon(Icons.Default.Settings, contentDescription = "Configurações", tint = Neon)
+                            }
+                        }
+                        Spacer(Modifier.weight(1f))
+                        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                            Box(
+                                Modifier.fillMaxWidth(0.82f).height(cardHeight * 0.78f)
+                                    .background(
+                                        Brush.radialGradient(
+                                            listOf(
+                                                (platforms[selectedIndex].colors.firstOrNull() ?: Purple).copy(alpha = .28f),
+                                                Color.Transparent
+                                            )
+                                        )
+                                    )
+                            )
+                            LazyRow(
+                                state = railState,
+                                modifier = Modifier.fillMaxWidth(),
+                                contentPadding = PaddingValues(horizontal = ((maxWidth - cardWidth) / 2).coerceAtLeast(12.dp)),
+                                horizontalArrangement = Arrangement.spacedBy(18.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                items(platforms, key = { it.id }) { platform ->
+                                    val chosen = platform.id == selectedId
+                                    Column(
+                                        Modifier.width(cardWidth)
+                                            .graphicsLayer {
+                                                val offset = (platforms.indexOf(platform) - selectedIndex).toFloat()
+                                                rotationY = when {
+                                                    offset < 0 -> 13f
+                                                    offset > 0 -> -13f
+                                                    else -> 0f
+                                                }
+                                                cameraDistance = 24f * density
+                                                scaleX = if (chosen) 1f else .91f
+                                                scaleY = if (chosen) 1f else .91f
+                                                alpha = if (chosen) 1f else .78f
                                             }
-                                        }
-                                        .padding(12.dp),
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                        Text("NEXOS", color = Neon, fontSize = 9.sp, letterSpacing = 2.sp, fontWeight = FontWeight.Bold)
-                                        Text("0${index + 1}", color = Muted, fontSize = 9.sp)
-                                    }
-                                    Box(
-                                        Modifier.fillMaxWidth().weight(1f)
-                                            .clip(RoundedCornerShape(8.dp))
-                                            .background(Brush.radialGradient(listOf(
-                                                platform.colors.first().copy(alpha = .9f), Color(0xFF100D17)
-                                            ))),
-                                        contentAlignment = Alignment.Center
+                                            .clickable {
+                                                if (chosen && awaitingSecondTap) {
+                                                    uiSound(true)
+                                                    openPlatform(platform)
+                                                } else {
+                                                    selectedId = platform.id
+                                                    awaitingSecondTap = true
+                                                    uiSound()
+                                                }
+                                            },
+                                        horizontalAlignment = Alignment.CenterHorizontally
                                     ) {
-                                        Text(platform.symbol, color = White, fontSize = if (selected) 92.sp else 68.sp, fontWeight = FontWeight.Black)
-                                        Box(Modifier.fillMaxWidth().height(2.dp).align(Alignment.Center)
-                                            .background(Brush.horizontalGradient(listOf(Color.Transparent, Neon, Color(0xFF35E7FF), Color.Transparent))))
-                                        Text(platform.caption, modifier = Modifier.align(Alignment.BottomStart).padding(8.dp),
-                                            color = Neon, fontSize = 10.sp, letterSpacing = 3.sp, fontWeight = FontWeight.Bold)
-                                    }
-                                    Column(Modifier.fillMaxWidth()) {
-                                        Text(platform.title, color = White, fontSize = 12.sp, fontWeight = FontWeight.Black,
-                                            maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                        Spacer(Modifier.height(5.dp))
-                                        Box(Modifier.fillMaxWidth().height(3.dp).clip(RoundedCornerShape(2.dp))
-                                            .background(if (selected) Neon else Color.White.copy(alpha = .18f)))
+                                        SystemCover(platform, cardHeight, chosen)
+                                        Spacer(Modifier.height(2.dp))
+                                        Box(
+                                            Modifier.fillMaxWidth().height(cardHeight * .30f)
+                                                .graphicsLayer { scaleY = -1f; alpha = .24f }
+                                                .clip(RoundedCornerShape(5.dp))
+                                        ) {
+                                            SystemCover(platform, cardHeight, chosen, reflection = true)
+                                            Box(
+                                                Modifier.fillMaxSize().background(
+                                                    Brush.verticalGradient(
+                                                        listOf(Color.Transparent, Night.copy(alpha = .92f))
+                                                    )
+                                                )
+                                            )
+                                        }
                                     }
                                 }
                             }
                         }
-                    }
-                    Row(Modifier.fillMaxWidth().height(26.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                        Text("DESLIZE PARA OS LADOS  •  UM TOQUE SELECIONA  •  DOIS TOQUES ENTRAM",
-                            color = Muted, fontSize = 8.sp, letterSpacing = .5.sp)
-                        Text("NEXOS OS  //  v0.4", color = Neon.copy(alpha = .8f), fontSize = 8.sp, letterSpacing = 1.sp)
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            platforms[selectedIndex].title,
+                            color = White,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 2.sp,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            "DESLIZE PARA NAVEGAR  •  TOQUE DUAS VEZES PARA ENTRAR",
+                            color = Muted,
+                            fontSize = 8.sp,
+                            letterSpacing = 1.sp
+                        )
+                        Spacer(Modifier.height(24.dp))
                     }
                 }
             } else {
@@ -476,6 +480,108 @@ private fun NexosApp() {
             containerColor = Panel,
             titleContentColor = White,
             textContentColor = Muted
+        )
+    }
+}
+
+
+@Composable
+private fun NexusSplash() {
+    val scale = remember { Animatable(0.78f) }
+    val alpha = remember { Animatable(0f) }
+    LaunchedEffect(Unit) {
+        alpha.animateTo(1f, tween(durationMillis = 650, easing = FastOutSlowInEasing))
+        scale.animateTo(1f, tween(durationMillis = 750, easing = FastOutSlowInEasing))
+    }
+    Box(
+        Modifier.fillMaxSize().background(Color(0xFF050509)),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            "NEXUS",
+            modifier = Modifier.graphicsLayer {
+                scaleX = scale.value
+                scaleY = scale.value
+                this.alpha = alpha.value
+            },
+            color = Color(0xFFF5F3FA),
+            fontSize = 42.sp,
+            fontWeight = FontWeight.Black,
+            letterSpacing = 8.sp
+        )
+    }
+}
+
+@Composable
+private fun SystemCover(platform: Platform, height: androidx.compose.ui.unit.Dp, selected: Boolean, reflection: Boolean = false) {
+    val c1 = platform.colors.firstOrNull() ?: Purple
+    val c2 = platform.colors.lastOrNull() ?: Night
+    Box(
+        Modifier.fillMaxWidth().height(height)
+            .clip(RoundedCornerShape(5.dp))
+            .background(Brush.linearGradient(listOf(c1, Color(0xFF11131F), c2)))
+            .border(
+                if (selected && !reflection) 2.dp else 1.dp,
+                if (selected && !reflection) Color(0xFF35BFFF) else Color(0xFF399CFF).copy(alpha = .75f),
+                RoundedCornerShape(5.dp)
+            )
+    ) {
+        Box(
+            Modifier.fillMaxWidth().height(7.dp).align(Alignment.TopCenter)
+                .background(Brush.horizontalGradient(listOf(Color(0xFF168BFF), Color(0xFF82D8FF), Color(0xFF168BFF))))
+        )
+        Text(
+            when (platform.id) {
+                "PS1" -> "PLAYSTATION"
+                "PS2" -> "PlayStation 2"
+                "PS3" -> "PlayStation 3"
+                "XBOX" -> "XBOX"
+                "XBOX360" -> "XBOX 360"
+                "SNES" -> "SUPER NINTENDO"
+                "MEGA" -> "MEGA DRIVE"
+                "PSP" -> "PSP"
+                "PC" -> "PC GAMING"
+                "IMPORT" -> "IMPORTAR"
+                "STORE" -> "LOJA NEXUS"
+                "LIBRARY" -> "BIBLIOTECA"
+                else -> platform.title
+            },
+            modifier = Modifier.align(Alignment.TopStart).padding(start = 8.dp, top = 15.dp, end = 6.dp),
+            color = Color.White.copy(alpha = .92f),
+            fontSize = 8.sp,
+            fontWeight = FontWeight.Bold,
+            letterSpacing = 1.sp,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis
+        )
+        Box(
+            Modifier.fillMaxWidth().fillMaxHeight(.68f).align(Alignment.Center)
+                .background(Brush.radialGradient(listOf(c1.copy(alpha = .85f), Color.Transparent))),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                platform.symbol,
+                color = Color.White.copy(alpha = .94f),
+                fontSize = 62.sp,
+                fontWeight = FontWeight.Black
+            )
+        }
+        Box(
+            Modifier.fillMaxWidth().height(2.dp).align(Alignment.Center)
+                .background(Brush.horizontalGradient(listOf(Color.Transparent, Color(0xFF53C8FF), Color.Transparent)))
+        )
+        Text(
+            platform.caption,
+            modifier = Modifier.align(Alignment.BottomStart).padding(9.dp),
+            color = Color.White,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Black,
+            letterSpacing = 2.sp
+        )
+        Box(
+            Modifier.fillMaxSize().background(
+                Brush.verticalGradient(listOf(Color.White.copy(alpha = .12f), Color.Transparent, Color.Black.copy(alpha = .48f)))
+            )
         )
     }
 }

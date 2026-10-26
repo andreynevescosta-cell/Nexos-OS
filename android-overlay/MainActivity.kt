@@ -489,28 +489,57 @@ private fun NexosApp() {
 
 @Composable
 private fun NexosSplash() {
-    val scale = remember { Animatable(0.78f) }
+    val scale = remember { Animatable(0.72f) }
     val alpha = remember { Animatable(0f) }
+    val glow = remember { Animatable(0.35f) }
     LaunchedEffect(Unit) {
-        alpha.animateTo(1f, tween(durationMillis = 650, easing = FastOutSlowInEasing))
-        scale.animateTo(1f, tween(durationMillis = 750, easing = FastOutSlowInEasing))
+        alpha.animateTo(1f, tween(durationMillis = 850, easing = FastOutSlowInEasing))
+        scale.animateTo(1f, tween(durationMillis = 950, easing = FastOutSlowInEasing))
+        while (true) {
+            glow.animateTo(1f, tween(900, easing = FastOutSlowInEasing))
+            glow.animateTo(0.42f, tween(900, easing = FastOutSlowInEasing))
+        }
     }
     Box(
-        Modifier.fillMaxSize().background(Color(0xFF050509)),
+        Modifier.fillMaxSize().background(
+            Brush.verticalGradient(listOf(Color(0xFF02030A), Color(0xFF08051A), Color(0xFF02030A)))
+        ),
         contentAlignment = Alignment.Center
     ) {
-        Text(
-            "NEXOS",
-            modifier = Modifier.graphicsLayer {
+        Box(Modifier.fillMaxWidth().height(2.dp).align(Alignment.Center)
+            .background(Brush.horizontalGradient(listOf(Color.Transparent, Color(0xFF176DFF).copy(alpha = glow.value), Color(0xFF9A39FF).copy(alpha = glow.value), Color.Transparent))))
+        Box(Modifier.fillMaxWidth(.9f).height(280.dp).align(Alignment.Center)
+            .background(Brush.radialGradient(listOf(Color(0xFF3422A0).copy(alpha = .28f * glow.value), Color.Transparent))))
+        Column(
+            Modifier.fillMaxWidth().graphicsLayer {
                 scaleX = scale.value
                 scaleY = scale.value
                 this.alpha = alpha.value
             },
-            color = Color(0xFFF5F3FA),
-            fontSize = 42.sp,
-            fontWeight = FontWeight.Black,
-            letterSpacing = 8.sp
-        )
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
+                Text("NE", color = Color(0xFFE8F3FF), fontSize = 46.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp)
+                Text("X", color = Color(0xFF59BFFF), fontSize = 58.sp, fontWeight = FontWeight.Black,
+                    modifier = Modifier.graphicsLayer { shadowElevation = 18f * glow.value })
+                Text("OS", color = Color(0xFFE8E1FF), fontSize = 46.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp)
+            }
+            Spacer(Modifier.height(2.dp))
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
+                Box(Modifier.width(42.dp).height(2.dp).background(Color(0xFF218BFF)))
+                Spacer(Modifier.width(12.dp))
+                Text("O S", color = Color.White, fontSize = 18.sp, letterSpacing = 8.sp, fontWeight = FontWeight.Light)
+                Spacer(Modifier.width(12.dp))
+                Box(Modifier.width(42.dp).height(2.dp).background(Color(0xFF9A39FF)))
+            }
+            Spacer(Modifier.height(22.dp))
+            Text("TODOS OS SEUS JOGOS. EM UM SÓ LUGAR.", color = Color(0xFFC8C7E5),
+                fontSize = 8.sp, letterSpacing = 2.sp, fontWeight = FontWeight.Medium)
+            Spacer(Modifier.height(62.dp))
+            Box(Modifier.size(24.dp).border(2.dp, Color(0xFF438BFF).copy(alpha = glow.value), RoundedCornerShape(50)))
+            Spacer(Modifier.height(12.dp))
+            Text("INICIANDO NEXOS OS...", color = Color.White.copy(alpha = .88f), fontSize = 9.sp, letterSpacing = 3.sp)
+        }
     }
 }
 
@@ -518,73 +547,83 @@ private fun NexosSplash() {
 private fun SystemCover(platform: Platform, height: androidx.compose.ui.unit.Dp, selected: Boolean, reflection: Boolean = false) {
     val c1 = platform.colors.firstOrNull() ?: Purple
     val c2 = platform.colors.lastOrNull() ?: Night
+    val heroes = when (platform.id) {
+        "PS1" -> listOf("🦊", "⚔️", "🏎️")
+        "PS2" -> listOf("⚔️", "🥷", "🐉")
+        "PS3" -> listOf("🧔🏻", "👧🏻", "🎮")
+        "XBOX" -> listOf("🪖", "🗡️", "🚙")
+        "XBOX360" -> listOf("🪖", "👩🏻", "⚔️")
+        "SNES" -> listOf("🍄", "🦖", "⭐")
+        "MEGA" -> listOf("🦔", "🦊", "💎")
+        "PSP" -> listOf("🥷", "🏁", "⚔️")
+        "PC" -> listOf("⌨️", "🖱️", "⚡")
+        "IMPORT" -> listOf("＋", "📁", "🎮")
+        "STORE" -> listOf("✦", "🛒", "🎮")
+        else -> listOf("▣", "🎮", "✦")
+    }
+    val device = when (platform.id) {
+        "PS1" -> "◉"
+        "PS2" -> "▰"
+        "PS3" -> "▰"
+        "XBOX" -> "▣"
+        "XBOX360" -> "▰"
+        "SNES" -> "▰"
+        "MEGA" -> "▰"
+        "PSP" -> "▱"
+        else -> "▣"
+    }
     Box(
         Modifier.fillMaxWidth().height(height)
-            .clip(RoundedCornerShape(5.dp))
-            .background(Brush.linearGradient(listOf(c1, Color(0xFF11131F), c2)))
+            .clip(RoundedCornerShape(7.dp))
+            .background(Brush.linearGradient(listOf(c1, Color(0xFF080A14), c2)))
             .border(
                 if (selected && !reflection) 2.dp else 1.dp,
-                if (selected && !reflection) Color(0xFF35BFFF) else Color(0xFF399CFF).copy(alpha = .75f),
-                RoundedCornerShape(5.dp)
+                if (selected && !reflection) Color(0xFF56C7FF) else c1.copy(alpha = .9f),
+                RoundedCornerShape(7.dp)
             )
     ) {
-        Box(
-            Modifier.fillMaxWidth().height(7.dp).align(Alignment.TopCenter)
-                .background(Brush.horizontalGradient(listOf(Color(0xFF168BFF), Color(0xFF82D8FF), Color(0xFF168BFF))))
-        )
+        Box(Modifier.fillMaxWidth().height(5.dp).align(Alignment.TopCenter)
+            .background(Brush.horizontalGradient(listOf(Color.Transparent, c1, Color(0xFF70D7FF), c1, Color.Transparent))))
         Text(
             when (platform.id) {
                 "PS1" -> "PLAYSTATION"
-                "PS2" -> "PlayStation 2"
-                "PS3" -> "PlayStation 3"
+                "PS2" -> "PLAYSTATION 2"
+                "PS3" -> "PLAYSTATION 3"
                 "XBOX" -> "XBOX"
                 "XBOX360" -> "XBOX 360"
                 "SNES" -> "SUPER NINTENDO"
-                "MEGA" -> "MEGA DRIVE"
-                "PSP" -> "PSP"
+                "MEGA" -> "SEGA MEGA DRIVE"
+                "PSP" -> "PLAYSTATION PORTABLE"
                 "PC" -> "PC GAMING"
-                "IMPORT" -> "IMPORTAR"
+                "IMPORT" -> "IMPORTAR ROMS"
                 "STORE" -> "LOJA NEXOS"
-                "LIBRARY" -> "BIBLIOTECA"
+                "LIBRARY" -> "MINHA BIBLIOTECA"
                 else -> platform.title
             },
-            modifier = Modifier.align(Alignment.TopStart).padding(start = 8.dp, top = 15.dp, end = 6.dp),
-            color = Color.White.copy(alpha = .92f),
-            fontSize = 8.sp,
-            fontWeight = FontWeight.Bold,
-            letterSpacing = 1.sp,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis
+            modifier = Modifier.align(Alignment.TopCenter).padding(horizontal = 7.dp, vertical = 13.dp),
+            color = Color.White, fontSize = 8.sp, fontWeight = FontWeight.Black,
+            letterSpacing = .8.sp, maxLines = 2, overflow = TextOverflow.Ellipsis
         )
-        Box(
-            Modifier.fillMaxWidth().fillMaxHeight(.68f).align(Alignment.Center)
-                .background(Brush.radialGradient(listOf(c1.copy(alpha = .85f), Color.Transparent))),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                platform.symbol,
-                color = Color.White.copy(alpha = .94f),
-                fontSize = 62.sp,
-                fontWeight = FontWeight.Black
-            )
+        Box(Modifier.fillMaxWidth().fillMaxHeight(.48f).align(Alignment.Center)
+            .background(Brush.radialGradient(listOf(c1.copy(alpha = .62f), Color.Transparent))),
+            contentAlignment = Alignment.Center) {
+            Row(Modifier.fillMaxWidth().padding(horizontal = 5.dp), horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically) {
+                heroes.forEach { hero ->
+                    Text(hero, fontSize = 29.sp, maxLines = 1)
+                }
+            }
         }
-        Box(
-            Modifier.fillMaxWidth().height(2.dp).align(Alignment.Center)
-                .background(Brush.horizontalGradient(listOf(Color.Transparent, Color(0xFF53C8FF), Color.Transparent)))
-        )
-        Text(
-            platform.caption,
-            modifier = Modifier.align(Alignment.BottomStart).padding(9.dp),
-            color = Color.White,
-            fontSize = 11.sp,
-            fontWeight = FontWeight.Black,
-            letterSpacing = 2.sp
-        )
-        Box(
-            Modifier.fillMaxSize().background(
-                Brush.verticalGradient(listOf(Color.White.copy(alpha = .12f), Color.Transparent, Color.Black.copy(alpha = .48f)))
-            )
-        )
+        Box(Modifier.fillMaxWidth().height(2.dp).align(Alignment.Center)
+            .background(Brush.horizontalGradient(listOf(Color.Transparent, c1, Color.White.copy(alpha = .9f), c1, Color.Transparent))))
+        Column(Modifier.align(Alignment.BottomCenter).padding(bottom = 9.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(device, color = Color.White.copy(alpha = .9f), fontSize = 34.sp, fontWeight = FontWeight.Black)
+            Text(platform.caption, color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 2.sp)
+            Text("NEXOS OS", color = Color.White.copy(alpha = .82f), fontSize = 7.sp, letterSpacing = 2.sp)
+        }
+        Box(Modifier.fillMaxSize().background(
+            Brush.verticalGradient(listOf(Color.White.copy(alpha = .12f), Color.Transparent, Color.Black.copy(alpha = .56f)))
+        ))
     }
 }
 

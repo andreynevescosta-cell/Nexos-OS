@@ -118,7 +118,7 @@ private fun NexosApp() {
     var awaitingSecondTap by remember { mutableStateOf(false) }
     var screen by remember { mutableStateOf("home") }
     var splashDone by remember { mutableStateOf(false) }
-    LaunchedEffect(Unit) { delay(1900); splashDone = true }
+    LaunchedEffect(Unit) { delay(3200); splashDone = true }
     var selectedSystem by remember { mutableStateOf("PS2") }
     var imported by remember { mutableStateOf(listOf<ImportedGame>()) }
     var search by remember { mutableStateOf("") }
@@ -211,7 +211,7 @@ private fun NexosApp() {
             )
         ) {
             if (!splashDone) {
-                NexusSplash()
+                NexosSplash()
             } else if (screen == "home") {
                 BoxWithConstraints(Modifier.fillMaxSize()) {
                     val cardWidth = (maxWidth * 0.205f).coerceIn(112.dp, 205.dp)
@@ -228,7 +228,7 @@ private fun NexosApp() {
                             Modifier.fillMaxWidth().padding(horizontal = 24.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text("NEXUS", color = White, fontSize = 16.sp, fontWeight = FontWeight.Black, letterSpacing = 4.sp)
+                            Text("NEXOS", color = White, fontSize = 16.sp, fontWeight = FontWeight.Black, letterSpacing = 4.sp)
                             Spacer(Modifier.weight(1f))
                             IconButton(onClick = { showSettings = true }) {
                                 androidx.compose.material3.Icon(Icons.Default.Settings, contentDescription = "Configurações", tint = Neon)
@@ -488,7 +488,7 @@ private fun NexosApp() {
 
 
 @Composable
-private fun NexusSplash() {
+private fun NexosSplash() {
     val scale = remember { Animatable(0.78f) }
     val alpha = remember { Animatable(0f) }
     LaunchedEffect(Unit) {
@@ -500,7 +500,7 @@ private fun NexusSplash() {
         contentAlignment = Alignment.Center
     ) {
         Text(
-            "NEXUS",
+            "NEXOS",
             modifier = Modifier.graphicsLayer {
                 scaleX = scale.value
                 scaleY = scale.value
@@ -544,7 +544,7 @@ private fun SystemCover(platform: Platform, height: androidx.compose.ui.unit.Dp,
                 "PSP" -> "PSP"
                 "PC" -> "PC GAMING"
                 "IMPORT" -> "IMPORTAR"
-                "STORE" -> "LOJA NEXUS"
+                "STORE" -> "LOJA NEXOS"
                 "LIBRARY" -> "BIBLIOTECA"
                 else -> platform.title
             },

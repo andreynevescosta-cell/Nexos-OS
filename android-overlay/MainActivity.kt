@@ -27,6 +27,7 @@ import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -215,6 +216,7 @@ private fun NexosApp() {
                 BoxWithConstraints(Modifier.fillMaxSize()) {
                     val cardWidth = (maxWidth * 0.205f).coerceIn(112.dp, 205.dp)
                     val cardHeight = cardWidth * 1.42f
+                    val horizontalPadding = ((maxWidth - cardWidth) / 2).coerceAtLeast(12.dp)
                     val railState = rememberLazyListState()
                     val selectedIndex = platforms.indexOfFirst { it.id == selectedId }.coerceAtLeast(0)
                     LaunchedEffect(selectedId) {
@@ -248,7 +250,7 @@ private fun NexosApp() {
                             LazyRow(
                                 state = railState,
                                 modifier = Modifier.fillMaxWidth(),
-                                contentPadding = PaddingValues(horizontal = ((maxWidth - cardWidth) / 2).coerceAtLeast(12.dp)),
+                                contentPadding = PaddingValues(horizontal = horizontalPadding),
                                 horizontalArrangement = Arrangement.spacedBy(18.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {

@@ -211,7 +211,7 @@ private fun NexosApp() {
             )
         ) {
             if (!splashDone) {
-                NexosSplash()
+                NexosSplash(toneGenerator = toneGenerator, soundEnabled = soundEnabled)
             } else if (screen == "home") {
                 BoxWithConstraints(Modifier.fillMaxSize()) {
                     val cardWidth = (maxWidth * 0.205f).coerceIn(112.dp, 205.dp)
@@ -488,11 +488,21 @@ private fun NexosApp() {
 
 
 @Composable
-private fun NexosSplash() {
+private fun NexosSplash(toneGenerator: ToneGenerator, soundEnabled: Boolean) {
     val scale = remember { Animatable(0.72f) }
     val alpha = remember { Animatable(0f) }
     val glow = remember { Animatable(0.35f) }
     LaunchedEffect(Unit) {
+        if (soundEnabled) {
+            // Original NEXOS electronic startup signature: rising notes and a bright finish.
+            toneGenerator.startTone(ToneGenerator.TONE_DTMF_1, 110)
+            delay(90)
+            toneGenerator.startTone(ToneGenerator.TONE_DTMF_4, 120)
+            delay(100)
+            toneGenerator.startTone(ToneGenerator.TONE_DTMF_7, 150)
+            delay(120)
+            toneGenerator.startTone(ToneGenerator.TONE_PROP_ACK, 220)
+        }
         alpha.animateTo(1f, tween(durationMillis = 850, easing = FastOutSlowInEasing))
         scale.animateTo(1f, tween(durationMillis = 950, easing = FastOutSlowInEasing))
         while (true) {
